@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import API_URL from './config'; // <--- IMPORTANT: Import the switchboard
+import API_URL from './config'; 
 import './App.css'; 
 
 const Admin = () => {
@@ -23,7 +23,6 @@ const Admin = () => {
 
   const fetchAppointments = async () => {
     try {
-      // UPDATED: Use API_URL
       const res = await fetch(`${API_URL}/appointments`);
       const data = await res.json();
       const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -40,7 +39,6 @@ const Admin = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      // UPDATED: Use API_URL
       const res = await fetch(`${API_URL}/appointment/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -56,15 +54,17 @@ const Admin = () => {
     } catch (err) { console.error(err); }
   };
 
+  // --- FIXED RESCHEDULE FUNCTION ---
   const handleRescheduleSubmit = async () => {
     if (!newDate || !newTime) return alert("Please select a date and time");
+    
     const confirmMsg = `Are you sure you want to move this appointment to ${newDate} at ${newTime}?`;
     if (!window.confirm(confirmMsg)) return;
 
     try {
-      // UPDATED: Use API_URL
+      // Uses PATCH (Correct for Lab 8)
       const res = await fetch(`${API_URL}/appointment/${rescheduleAppt._id}`, {
-        method: 'PUT', // or PATCH
+        method: 'PATCH', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           status: 'Rescheduled', 
@@ -72,20 +72,26 @@ const Admin = () => {
           time: newTime 
         })
       });
+      
       if (res.ok) {
-        fetchAppointments(); // Or update local state efficiently
+        setAppointments(prev => prev.map(appt => 
+            appt._id === rescheduleAppt._id ? { ...appt, status: 'Rescheduled', date: newDate, time: newTime } : appt
+        ));
+        
         setRescheduleAppt(null);
         setNewDate('');
         setNewTime('');
         alert("Appointment successfully rescheduled!"); 
+      } else {
+        alert("Server failed to update. Check console.");
       }
     } catch (err) { console.error(err); }
   };
+  // (I removed the duplicate broken block that was here)
 
   const deleteAppointment = async (id) => {
     if (window.confirm("Are you sure you want to PERMANENTLY delete this record?")) {
       try {
-        // UPDATED: Use API_URL
         const res = await fetch(`${API_URL}/appointment/${id}`, {
           method: 'DELETE'
         });
@@ -197,7 +203,6 @@ const Admin = () => {
         </table>
       </div>
 
-      {/* VIEW MODAL */}
       {viewAppt && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -217,7 +222,6 @@ const Admin = () => {
         </div>
       )}
 
-      {/* RESCHEDULE MODAL */}
       {rescheduleAppt && (
         <div className="modal-overlay">
           <div className="modal-content">

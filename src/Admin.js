@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import API_URL from './config'; // <--- IMPORTANT: Import the switchboard
 import './App.css'; 
 
 const Admin = () => {
@@ -22,7 +23,8 @@ const Admin = () => {
 
   const fetchAppointments = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/appointments');
+      // UPDATED: Use API_URL
+      const res = await fetch(`${API_URL}/appointments`);
       const data = await res.json();
       const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
       setAppointments(sortedData);
@@ -36,10 +38,10 @@ const Admin = () => {
     return Math.abs(age_dt.getUTCFullYear() - 1970);
   };
 
- const updateStatus = async (id, status) => {
+  const updateStatus = async (id, status) => {
     try {
-      // Changed method to PATCH to match backend
-      const res = await fetch(`http://localhost:5000/api/appointment/${id}`, {
+      // UPDATED: Use API_URL
+      const res = await fetch(`${API_URL}/appointment/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -47,7 +49,6 @@ const Admin = () => {
       
       if (res.ok) {
         const updatedItem = await res.json();
-        // STATE EFFICIENCY: Update local state immediately without re-fetching
         setAppointments(prev => prev.map(appt => 
           appt._id === id ? { ...appt, status: updatedItem.status } : appt
         ));
@@ -61,8 +62,9 @@ const Admin = () => {
     if (!window.confirm(confirmMsg)) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/appointment/${rescheduleAppt._id}`, {
-        method: 'PUT',
+      // UPDATED: Use API_URL
+      const res = await fetch(`${API_URL}/appointment/${rescheduleAppt._id}`, {
+        method: 'PUT', // or PATCH
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           status: 'Rescheduled', 
@@ -71,7 +73,7 @@ const Admin = () => {
         })
       });
       if (res.ok) {
-        fetchAppointments();
+        fetchAppointments(); // Or update local state efficiently
         setRescheduleAppt(null);
         setNewDate('');
         setNewTime('');
@@ -83,12 +85,12 @@ const Admin = () => {
   const deleteAppointment = async (id) => {
     if (window.confirm("Are you sure you want to PERMANENTLY delete this record?")) {
       try {
-        const res = await fetch(`http://localhost:5000/api/appointment/${id}`, {
+        // UPDATED: Use API_URL
+        const res = await fetch(`${API_URL}/appointment/${id}`, {
           method: 'DELETE'
         });
         
         if (res.ok || res.status === 204) {
-          // STATE EFFICIENCY: Remove from local list immediately (.filter)
           setAppointments(prev => prev.filter(appt => appt._id !== id));
         }
       } catch (err) { console.error(err); }
@@ -127,7 +129,7 @@ const Admin = () => {
             <tr>
               <th style={{ width: '13%' }}>Date & Time</th>
               <th style={{ width: '18%' }}>Patient Name</th>
-              <th style={{ width: '12%' }}>Status</th> {/* <--- RESTORED HEADER */}
+              <th style={{ width: '12%' }}>Status</th>
               <th style={{ width: '15%' }}>Contact</th>
               <th style={{ width: '15%' }}>Emergency</th>
               <th style={{ width: '27%', textAlign: 'center' }}>Actions</th>
@@ -146,7 +148,6 @@ const Admin = () => {
                     <span className="sub-text">{appt.sex}, {calculateAge(appt.birthday)} yrs</span>
                   </td>
                   
-                  {/* --- RESTORED STATUS COLUMN --- */}
                   <td>
                     <span className={`status-badge ${appt.status || 'Pending'}`}>
                       {appt.status || 'Pending'}

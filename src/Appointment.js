@@ -89,11 +89,15 @@ const Appointment = () => {
     const appointmentData = { date, time, ...details };
 
     try {
-      const response = await fetch('http://localhost:5000/api/book', {
+      // OLD: const response = await fetch('http://localhost:5000/api/book', {
+      
+      // NEW: Use backticks ( ` ) so we can insert the variable
+      const response = await fetch(`${API_URL}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(appointmentData)
       });
+      
       const data = await response.json();
       if (response.ok) {
         setIsSuccess(true);

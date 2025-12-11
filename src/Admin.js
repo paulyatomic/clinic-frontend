@@ -12,10 +12,12 @@ const Admin = () => {
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
 
+  // 1. Fetch Data on Load
   useEffect(() => {
     fetchAppointments();
   }, []);
 
+  // 2. Clear Modals when switching tabs
   useEffect(() => {
     setRescheduleAppt(null);
     setViewAppt(null);
@@ -25,6 +27,7 @@ const Admin = () => {
     try {
       const res = await fetch(`${API_URL}/appointments`);
       const data = await res.json();
+      // Sort by date (newest first)
       const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
       setAppointments(sortedData);
     } catch (err) { console.error("Error fetching data:", err); }
@@ -37,6 +40,7 @@ const Admin = () => {
     return Math.abs(age_dt.getUTCFullYear() - 1970);
   };
 
+  // --- ACTION: APPROVE / DONE ---
   const updateStatus = async (id, status) => {
     try {
       const res = await fetch(`${API_URL}/appointment/${id}`, {
@@ -46,6 +50,7 @@ const Admin = () => {
       });
       
       if (res.ok) {
+        // Update local list instantly
         const updatedItem = await res.json();
         setAppointments(prev => prev.map(appt => 
           appt._id === id ? { ...appt, status: updatedItem.status } : appt
@@ -54,7 +59,7 @@ const Admin = () => {
     } catch (err) { console.error(err); }
   };
 
-  // --- FIXED RESCHEDULE FUNCTION ---
+  // --- ACTION: RESCHEDULE ---
   const handleRescheduleSubmit = async () => {
     if (!newDate || !newTime) return alert("Please select a date and time");
     
@@ -74,10 +79,12 @@ const Admin = () => {
       });
       
       if (res.ok) {
+        // Update local list instantly
         setAppointments(prev => prev.map(appt => 
             appt._id === rescheduleAppt._id ? { ...appt, status: 'Rescheduled', date: newDate, time: newTime } : appt
         ));
         
+        // Close modal and reset form
         setRescheduleAppt(null);
         setNewDate('');
         setNewTime('');
@@ -87,8 +94,8 @@ const Admin = () => {
       }
     } catch (err) { console.error(err); }
   };
-  // (I removed the duplicate broken block that was here)
 
+  // --- ACTION: DELETE ---
   const deleteAppointment = async (id) => {
     if (window.confirm("Are you sure you want to PERMANENTLY delete this record?")) {
       try {
@@ -103,6 +110,7 @@ const Admin = () => {
     }
   };
 
+  // Filter Logic
   const filteredAppointments = appointments.filter(appt => {
     if (activeTab === 'Done') return appt.status === 'Completed';
     return (appt.status || 'Pending') === activeTab;

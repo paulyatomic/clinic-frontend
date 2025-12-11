@@ -27,7 +27,6 @@ const Admin = () => {
     try {
       const res = await fetch(`${API_URL}/appointments`);
       const data = await res.json();
-      // Sort by date (newest first)
       const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
       setAppointments(sortedData);
     } catch (err) { console.error("Error fetching data:", err); }
@@ -50,7 +49,6 @@ const Admin = () => {
       });
       
       if (res.ok) {
-        // Update local list instantly
         const updatedItem = await res.json();
         setAppointments(prev => prev.map(appt => 
           appt._id === id ? { ...appt, status: updatedItem.status } : appt
@@ -59,15 +57,12 @@ const Admin = () => {
     } catch (err) { console.error(err); }
   };
 
-  // --- ACTION: RESCHEDULE ---
+  // --- ACTION: RESCHEDULE (No Alerts) ---
   const handleRescheduleSubmit = async () => {
-    if (!newDate || !newTime) return alert("Please select a date and time");
-    
-    const confirmMsg = `Are you sure you want to move this appointment to ${newDate} at ${newTime}?`;
-    if (!window.confirm(confirmMsg)) return;
+    // Simple check to ensure data exists
+    if (!newDate || !newTime) return; 
 
     try {
-      // Uses PATCH (Correct for Lab 8)
       const res = await fetch(`${API_URL}/appointment/${rescheduleAppt._id}`, {
         method: 'PATCH', 
         headers: { 'Content-Type': 'application/json' },
@@ -79,18 +74,17 @@ const Admin = () => {
       });
       
       if (res.ok) {
-        // Update local list instantly
+        // 1. Instantly update the list on the screen (So it moves tabs immediately)
         setAppointments(prev => prev.map(appt => 
             appt._id === rescheduleAppt._id ? { ...appt, status: 'Rescheduled', date: newDate, time: newTime } : appt
         ));
         
-        // Close modal and reset form
+        // 2. Close the modal immediately
         setRescheduleAppt(null);
         setNewDate('');
         setNewTime('');
-        alert("Appointment successfully rescheduled!"); 
-      } else {
-        alert("Server failed to update. Check console.");
+        
+        // (No alerts here anymore)
       }
     } catch (err) { console.error(err); }
   };
